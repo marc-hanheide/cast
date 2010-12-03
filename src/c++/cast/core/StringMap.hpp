@@ -23,17 +23,18 @@
 #ifndef STRING_MAP_H_
 #define STRING_MAP_H_
 
-#include <tr1/unordered_map>
+#include <ext/hash_map>
+#include <map>
 
-// // from http://forums.devshed.com/c-programming-42/tip-about-stl-hash-map-and-string-55093.html
-// namespace __gnu_cxx { 
-//   template<> struct hash<std::string>
-//   {
-//     size_t operator()(const std::string& _str) const { 
-//       return hash<const char*>()(_str.c_str()); 
-//     } 
-//   };
-// } // namespace __gnu_cxx
+// from http://forums.devshed.com/c-programming-42/tip-about-stl-hash-map-and-string-55093.html
+namespace __gnu_cxx { 
+  template<> struct hash<std::string>
+  {
+    size_t operator()(const std::string& _str) const { 
+      return hash<const char*>()(_str.c_str()); 
+    } 
+  };
+} // namespace __gnu_cxx
 
 
 namespace cast {
@@ -42,8 +43,7 @@ namespace cast {
   template <typename T>
   struct StringMap {
     //typedef std::map<std::string,T> map;
-    //typedef __gnu_cxx::hash_map<std::string,T> map;
-	typedef std::tr1::unordered_map< std::string,T> map;
+    typedef __gnu_cxx::hash_map<std::string,T> map;
   private:    
     StringMap();
     StringMap(const StringMap&);

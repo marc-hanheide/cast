@@ -17,9 +17,7 @@ include(${CAST_ROOT}/cmake/CASTBuild.cmake)
 
 # build and install cast
 add_subdirectory (src/c++)
-# add_subdirectory (src/java)
 add_subdirectory (src/python)
-
 
 # supporting material
 add_subdirectory (cmake)

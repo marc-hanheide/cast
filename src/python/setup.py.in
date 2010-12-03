@@ -7,9 +7,6 @@ setup(
      },
      packages=[
           'cast',
-          'cast/cdl',
-          'cast/cdl/testing',
-          'cast/interfaces',
           'cast/examples',
           'cast/examples/autogen'
      ],
@@ -26,7 +23,7 @@ setup(
                'cast.pylog4cxx',
                ['${EXT_SRC_DIR}/pylog4cxx.cpp'],
                include_dirs=[${INCLUDE_DIRS_LIST}],
-               libraries=['${LOG4CXX_LIBRARIES}',${ICE_LIBS_LIST}, 'CASTCore'],
+               libraries=['${LOG4CXX_LIBRARIES}', 'CASTCore'],
                library_dirs=[${LIBRARY_DIRS_LIST}]
           )]
 )

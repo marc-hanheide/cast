@@ -127,14 +127,14 @@ public abstract class ManagedComponent extends WorkingMemoryReaderComponent
 			TaskManagementDecision _decision) {
 
 		// inform sub-class of result
-		if (_decision == TaskManagementDecision.TaskAdopted) {
+		if (_decision.value() == TaskManagementDecision.TaskAdopted.value()) {
 			taskAdopted(_taskID);
 			synchronized (m_taskNotificationLock) {
 				m_notifications++;
 				m_taskNotificationLock.notifyAll();
 			}
 
-		} else if (_decision == TaskManagementDecision.TaskRejected
+		} else if (_decision.value() == TaskManagementDecision.TaskRejected.value()
 				) {
 			taskRejected(_taskID);
 			synchronized (m_taskNotificationLock) {
@@ -142,7 +142,7 @@ public abstract class ManagedComponent extends WorkingMemoryReaderComponent
 				m_taskNotificationLock.notifyAll();
 			}
 
-		} else if (_decision == TaskManagementDecision.TaskWaiting) {
+		} else if (_decision.value() == TaskManagementDecision.TaskWaiting.value()) {
 			debug("TaskWaiting received for: " + _taskID);
 		} 
 

@@ -1,26 +1,3 @@
-2.1.11
-
-2010-08-02  Nick Hawes  <n.a.hawes@cs.bham.ac.uk>
-
-  * Added logging to client to see what is being created at start-up.
-
-2.1.10
-
-2010-07-11  Nick Hawes  <n.a.hawes@cs.bham.ac.uk>
-
-  * Fiddled with CDL WorkingMemoryEntrySeq definition to ensure that it compiles. Had to put fully qualified class name in annotation.
-
-  * Made python build depend on CDL build, which means it doesn't cause errors when running a multi-thread build on a clean install. Also added missing packages to setup.py.in which all of a sudden were missed by the server.
-
-2010-?  Marko Mahnič <marko.mahnic@fri.uni-lj.si>
-
-  * Added logging to Python components using a wrapper around Log4CXX
-
-2010-?  Nick Hawes  <n.a.hawes@cs.bham.ac.uk>
-
-  * Added in much more TRACE level logging to abstract CAST components. Not complete though, so do not trust yet.
-
-
 2.1.9
 
 2010-04-04  Nick Hawes  <n.a.hawes@cs.bham.ac.uk>

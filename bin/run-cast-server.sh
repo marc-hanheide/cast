@@ -19,7 +19,7 @@ CAST_LIB_PREFIX=lib/cast
 CAST_LIB_DIR=${CAST_INSTALL_ROOT}/${CAST_LIB_PREFIX}
 CAST_PY_DIR=${CAST_LIB_DIR}/python
 
-CAST_JAR=${CAST_INSTALL_ROOT}/share/java/cast.jar
+#CAST_JAR=/Users/jotto/Desktop/Masterarbeit/castDummy/cast/output/jars/cast.jar
 
 WE_SET_ICE_CONFIG=1
 CAST_CONFIG_PATH=share/cast/config/cast_ice_config
@@ -37,7 +37,7 @@ else
     export ICE_CONFIG=${CAST_ICE_CONFIG}
 fi 
 
-java -ea -classpath ${CLASSPATH}:${CAST_JAR} cast.server.ComponentServer &
+java -ea -classpath ${CLASSPATH} cast.server.ComponentServer &
 JAVA_SERVER_JOB=$!
 
 
@@ -50,16 +50,16 @@ ${CAST_BIN_DIR}/cast-server-c++ &
 CPP_SERVER_JOB=$!
 
 
-SAVED_PYTHONPATH=${PYTHONPATH}
-export PYTHONPATH=${PYTHONPATH}:${CAST_PY_DIR}
+#SAVED_PYTHONPATH=${PYTHONPATH}
+#export PYTHONPATH=${PYTHONPATH}:${CAST_PY_DIR}
 
-python -m ComponentServer &
-PY_SERVER_JOB=$!
+#python -m ComponentServer &
+#PY_SERVER_JOB=$!
 
 
 echo Java server pid: ${JAVA_SERVER_JOB}
 echo CPP server pid: ${CPP_SERVER_JOB}
-echo Python server pid: ${PY_SERVER_JOB}
+#echo Python server pid: ${PY_SERVER_JOB}
 
 
 # if we're killed, take down everyone else with us

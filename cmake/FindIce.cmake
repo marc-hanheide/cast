@@ -74,7 +74,7 @@ IF( ICE_HOME_INCLUDE_ICE )
     
     # debian package splits off slice files into a different place
     IF( ICE_HOME MATCHES /usr )
-        SET( ICE_SLICE_DIR /usr/share/Ice/slice )
+        SET( ICE_SLICE_DIR /usr/share/slice )
 #         MESSAGE( STATUS "This is a Debian Ice installation. Slice files are in ${ice_slice_dir}" )
     ELSE ( ICE_HOME MATCHES /usr )
         SET( ICE_SLICE_DIR ${ICE_HOME}/slice )

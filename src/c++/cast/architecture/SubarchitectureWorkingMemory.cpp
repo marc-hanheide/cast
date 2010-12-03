@@ -25,8 +25,6 @@
 #include <CASTWorkingMemory.hpp>
 #include <CASTUtils.hpp>
 
-#include <boost/thread/locks.hpp>
-
 using namespace std;
 
 /**
@@ -69,7 +67,7 @@ namespace cast {
 						     const cdl::WorkingMemoryChange & _change) const {
 
     string subarch(_change.address.subarchitecture);
-    StringSet::const_iterator i = m_ignoreList.find(subarch);
+    StringSet::iterator i = m_ignoreList.find(subarch);
     return i == m_ignoreList.end() && m_componentFilters.allowsChange(_change);
   }
 
@@ -109,12 +107,13 @@ namespace cast {
 
     //if this is for me
     if (getSubarchitectureID() == _subarch) {
-      boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
+      m_readWriteLock.lock();
       bool result = overwriteWorkingMemory(_id, createEntry(_id, _type,
 							    _entry), _component);
       //sanity check
       assert(result);
       signalChange(cdl::OVERWRITE, _component, _id, _type, _entry->ice_ids());
+      m_readWriteLock.unlock();
     } else {
       //send on to the one that really cares
       getWorkingMemory(_subarch)->overwriteWorkingMemory(_id, _subarch,
@@ -128,6 +127,10 @@ namespace cast {
 
     //first sanity check
     if (!m_workingMemory.contains(_id)) {
+
+      //bad coding, but safer now
+      m_readWriteLock.unlock();
+
       throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,"Entry does not exist to overwrite. Was trying to overwrite id %s in subarchitecture %s" ,
 						       _id.c_str(),getSubarchitectureID().c_str()),
 				      makeWorkingMemoryAddress(_id,getSubarchitectureID())));
@@ -163,11 +166,12 @@ namespace cast {
 
     //if this is for me
     if(getSubarchitectureID() == _subarch) {
-      boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
+      m_readWriteLock.lock();
       WorkingMemoryEntryPtr entry(deleteFromWorkingMemory(_id, _component));
       //sanity check
       assert(entry);
       signalChange(cdl::DELETE,_component,_id,entry->type, entry->entry->ice_ids());
+      m_readWriteLock.unlock();
     }
     else {
       //send on to the one that really cares
@@ -182,6 +186,8 @@ namespace cast {
 
     //first sanity check
     if(!m_workingMemory.contains(_id)) {
+      //more bad coding...
+      m_readWriteLock.unlock();
       throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,
 						       "Entry does not exist to delete. Was trying to delete id %s in subarchitecture %s",
 						       _id.c_str(),getSubarchitectureID().c_str()),
@@ -237,12 +243,20 @@ namespace cast {
 
     //if this is for me
     if(getSubarchitectureID() == _subarch) {
-		boost::shared_lock<boost::shared_mutex> locker(m_readWriteLock);
-		cdl::WorkingMemoryEntryPtr entry = getWorkingMemoryEntry(_id,_component);
-		return entry;
+      class _locker { public: // XXX: quickfix to unlock on exception
+	boost::shared_mutex *pl;
+	_locker(boost::shared_mutex &l) { pl = &l; pl->lock_shared(); }
+	~_locker() { pl->unlock_shared(); }
+      } _lockme(m_readWriteLock);
+      // m_readWriteLock.lock_shared();
+      cdl::WorkingMemoryEntryPtr entry = getWorkingMemoryEntry(_id,_component);
+      // m_readWriteLock.unlock_shared();
+      return entry;
+
     }
     else {
       //      println("remote query");
+
       //send on to the one that really cares
       return getWorkingMemory(_subarch)->getWorkingMemoryEntry(_id,_subarch,_component);
     }
@@ -298,8 +312,10 @@ namespace cast {
 
     //if this is for me
     if(getSubarchitectureID() == _subarch) {      
-		boost::shared_lock<boost::shared_mutex> locker(m_readWriteLock);
+      m_readWriteLock.lock_shared();
       getWorkingMemoryEntries(_type,_count, _component, _entries);
+      m_readWriteLock.unlock_shared();
+
     }
     else {
       //send on to the one that really cares
@@ -345,14 +361,14 @@ namespace cast {
   SubarchitectureWorkingMemory::receiveChangeEvent(const cdl::WorkingMemoryChange& wmc,
 						   const Ice::Current & _ctx) {
 
-    boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
+    m_readWriteLock.lock();
 
     // if the filters require external changes, allow them to be
     // forwarded
     if (!m_componentFilters.localFiltersOnly()) {
 
-     if(m_bDebugOutput) {
-		ostringstream outStream;
+      if(m_bDebugOutput) {
+	ostringstream outStream;
 	outStream<<"forwarding change: "<<wmc;
 	debug(outStream.str());
       }
@@ -363,6 +379,8 @@ namespace cast {
       }
 
     }
+
+    m_readWriteLock.unlock();   
 
   }
 
@@ -519,8 +537,11 @@ namespace cast {
     throw (UnknownSubarchitectureException) {
     //if this is for me
     if(getSubarchitectureID() == _subarch) {
-	  boost::shared_lock<boost::shared_mutex> locker(m_readWriteLock);
-      return m_workingMemory.contains(_id);
+      m_readWriteLock.lock_shared();
+      bool exists = m_workingMemory.contains(_id);
+      m_readWriteLock.unlock_shared();
+      return exists;
+
     }
     else {
       //send on to the one that really cares
@@ -537,19 +558,23 @@ namespace cast {
     //if this is for me
     if(getSubarchitectureID() == _subarch) {
 
-		boost::shared_lock<boost::shared_mutex> locker(m_readWriteLock);
-		//if it has once existed, then return a value
-      	if(m_workingMemory.hasContained(_id)) {
-			Ice::Int versionNumber = m_workingMemory.getOverwriteCount(_id);
-			return versionNumber;
-      	}
-      	//else kick up a fuss
-      	else {
-			throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,
+      m_readWriteLock.lock_shared();
+
+      //if it has once existed, then return a value
+      if(m_workingMemory.hasContained(_id)) {
+	Ice::Int versionNumber = m_workingMemory.getOverwriteCount(_id);
+	m_readWriteLock.unlock_shared();
+	return versionNumber;
+      }
+      //else kick up a fuss
+      else {
+
+	m_readWriteLock.unlock_shared();
+	throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,
 							 "Entry has never existed on wm. Was looking in subarch %s for id %s",
 							 _subarch.c_str(),_id.c_str()),
 					makeWorkingMemoryAddress(_id,_subarch)));
-      	}
+      }
     }
     else {
       //send on to the one that really cares
@@ -566,20 +591,25 @@ namespace cast {
 
     //if this is for me
     if(getSubarchitectureID() == _subarch) {
-      	//if it exists, then return a value
-		boost::shared_lock<boost::shared_mutex> locker(m_readWriteLock);
+      //if it exists, then return a value
 
-      	if(m_workingMemory.contains(_id)) {
-			WorkingMemoryPermissions permissions = m_permissions.getPermissions(_id);
-			return permissions;
-      	}
-      	//else kick up a fuss
-      	else {
-			throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,
+      m_readWriteLock.lock_shared();
+
+      if(m_workingMemory.contains(_id)) {
+	WorkingMemoryPermissions permissions = m_permissions.getPermissions(_id);
+	m_readWriteLock.unlock_shared();
+
+	return permissions;
+      }
+      //else kick up a fuss
+      else {
+	m_readWriteLock.unlock_shared();
+
+	throw(DoesNotExistOnWMException(exceptionMessage(__HERE__,
 							 "Entry does not exist on wm. Was looking in subarch %s for id %s",
 							 _subarch.c_str(),_id.c_str()),
 					makeWorkingMemoryAddress(_id,_subarch)));
-      	}
+      }
     }
     else {
       //get the correct wm and query that instead
@@ -751,10 +781,12 @@ namespace cast {
     if(getSubarchitectureID() == _subarch) {
       //if it already exists complain bitterly
 
-      boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);	
-    
-  	  if (m_workingMemory.contains(_id)) {		
-		throw(AlreadyExistsOnWMException(exceptionMessage(__HERE__,
+      m_readWriteLock.lock();
+	
+      if (m_workingMemory.contains(_id)) {
+	m_readWriteLock.unlock();
+
+	throw(AlreadyExistsOnWMException(exceptionMessage(__HERE__,
 							  "Entry already exists on WM. Was trying to write id %s in subarchitecture %s",
 							  _id.c_str(),_subarch.c_str()),
 					 makeWorkingMemoryAddress(_id,_subarch)));
@@ -762,15 +794,18 @@ namespace cast {
       }
       //else get stuck in
       else {
-		bool result = addToWorkingMemory(_id, createEntry(_id,_type,_entry));
-		//sanity check
-		assert(result);
-		signalChange(cdl::ADD,_component,_id,_type, _entry->ice_ids());
+	bool result = addToWorkingMemory(_id, createEntry(_id,_type,_entry));
+	//sanity check
+	assert(result);
+	signalChange(cdl::ADD,_component,_id,_type, _entry->ice_ids());
+	m_readWriteLock.unlock();
       }
     }
     else {
+
       //get the correct wm and query that instead
       getWorkingMemory(_subarch)->addToWorkingMemory(_id,_subarch, _type, _component, _entry);
+
     }
   }
 
@@ -782,7 +817,7 @@ namespace cast {
 							const ::Ice::Current & _ctx) {
 
 
-    boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
+    m_readWriteLock.lock();
 
     debug("SubarchitectureWorkingMemory::registerComponentFilter()");
     ostringstream outStream;
@@ -807,6 +842,7 @@ namespace cast {
       }
     }
 
+    m_readWriteLock.unlock();
 
   }
 
@@ -816,14 +852,20 @@ namespace cast {
 							    Ice::Int priority,
 							    const ::Ice::Current & _ctx) {
 
-	boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
-    
-	debug("SubarchitectureWorkingMemory::registerWorkingMemoryFilter()");
+    m_readWriteLock.lock();
+    debug("SubarchitectureWorkingMemory::registerWorkingMemoryFilter()");
     ostringstream outStream;
     outStream<<_filter;
     debug(outStream.str());
 
     m_wmFilters.put(_filter,_subarch,(int)priority);
+
+    //     cout<<"new filters length: "<<m_wmFilters.size()<<endl;
+    //     cout<<"only local: "<<m_wmFilters.localFiltersOnly()<<endl;
+
+
+    m_readWriteLock.unlock();
+    
   }
 
 
@@ -832,7 +874,7 @@ namespace cast {
 						      const ::Ice::Current & _ctx) {
 
 
-	boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
+    m_readWriteLock.lock();
 
     //     debug("SubarchitectureWorkingMemory::deleteComponentChangeFilter()");
     //     debug(_src);
@@ -843,12 +885,16 @@ namespace cast {
     vector<string> removed;
     m_componentFilters.remove(_filter, removed);
 
+    //cout<<"new filters length: "<<m_componentFilters.size()<<endl;
+    //cout<<"only local: "<<m_componentFilters.localFiltersOnly()<<endl;
 
     for(WMPrxMap::iterator i = m_workingMemories.begin();
 	i != m_workingMemories.end(); ++i) {
       i->second->removeWorkingMemoryFilter(_filter);
     }
 
+
+    m_readWriteLock.unlock();
   }
 
 
@@ -857,8 +903,7 @@ namespace cast {
 							  const ::Ice::Current & _ctx) {
 
 
-    boost::lock_guard<boost::shared_mutex> locker(m_readWriteLock);
-
+    m_readWriteLock.lock();
 
     //     debug("SubarchitectureWorkingMemory::deleteWMChangeFilter()");
     //     debug(_src);
@@ -871,6 +916,8 @@ namespace cast {
 
     //cout<<"new filters length: "<<m_wmFilters.size()<<endl;
     //cout<<"only local: "<<m_wmFilters.localFiltersOnly()<<endl;
+
+    m_readWriteLock.unlock();
 
   }
 

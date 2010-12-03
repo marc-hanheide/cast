@@ -156,7 +156,6 @@ public class CASTClient extends Application {
 				}
 
 				try {
-	
 					CASTComponentPrx prx = CASTUtils.createCASTComponent(
 							new Identity(cd.componentName, cd.className),
 							communicator(), cd.hostName, compPort);

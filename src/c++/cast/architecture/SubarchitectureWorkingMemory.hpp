@@ -32,13 +32,14 @@
 
 #include <vector>
 #include <memory>
-#include <tr1/unordered_set>
+#include <ext/hash_set>
+
 
 #include <boost/thread/shared_mutex.hpp>
 
 namespace cast {
 
-  typedef std::tr1::unordered_set<std::string> StringSet;
+  typedef __gnu_cxx::hash_set<std::string> StringSet;
   typedef StringMap<interfaces::WorkingMemoryPrx>::map WMPrxMap;
   
   

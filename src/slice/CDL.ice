@@ -7,12 +7,12 @@ module cast
   module cdl
   {
 
-    const string CASTRELEASESTRING = "2.1.11 (Lustreless)";
+    const string CASTRELEASESTRING = "2.1.10 pre (Drink The Potion)";
 
     const int JAVASERVERPORT = 10111;
     const int CPPSERVERPORT = 10211;
     const int JAVACLIENTSERVERPORT = 10311;
-    const int PYTHONSERVERPORT = 10112;
+    const int PYTHONSERVERPORT = 10411;
  
     const string SUBARCHIDKEY = "org.cognitivesystem.cast.subarchID"; 
     const string COMPONENTNUMBERKEY = "org.cognitivesystem.cast.componentNumber";
@@ -85,7 +85,7 @@ module cast
       Object entry;
     };
 
-    ["java:type:java.util.LinkedList<cast.cdl.WorkingMemoryEntry>:java.util.List<cast.cdl.WorkingMemoryEntry>"]	
+    ["java:type:java.util.LinkedList<WorkingMemoryEntry>:java.util.List<WorkingMemoryEntry>"]	
     sequence<WorkingMemoryEntry> WorkingMemoryEntrySeq;
 
     enum WorkingMemoryOperation {
@@ -498,7 +498,7 @@ module cast
       /**
        * Get the description of a particular component.
        */
-      ["cpp:const"] idempotent cdl::ComponentDescription getComponentDescription(string componentID) throws CASTException;
+      ["cpp:const"] idempotent cdl::ComponentDescription getComponentDescription(string componentID);
 
       /**
        * Descriptions of all components indexed by component id.

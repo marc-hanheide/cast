@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import Ice.Application;
@@ -19,8 +20,6 @@ import cast.cdl.JAVASERVERPORT;
 import cast.cdl.LOGGINGENVVAR;
 import cast.cdl.LOGGINGPROPERTIESFILE;
 import cast.core.logging.ComponentLayout;
-import cast.core.logging.ComponentLogger;
-import cast.core.logging.LogAdditions;
 
 /**
  * @author nah
@@ -65,8 +64,8 @@ public class ComponentServer extends Application {
 		Properties prop = new Properties();
 		prop.put("log4j.rootLogger", "INFO, stdout");
 		prop.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-		prop.put("log4j.appender.stdout.layout",
-				ComponentLayout.class.getName());
+		prop.put("log4j.appender.stdout.layout", ComponentLayout.class
+				.getName());
 		PropertyConfigurator.configure(prop);
 	}
 
@@ -119,16 +118,13 @@ public class ComponentServer extends Application {
 		return false;
 	}
 
-	private ComponentLogger m_logger;
-	private LogAdditions m_logAddy;
+	private Logger logger = Logger
+			.getLogger("cast.server.java.ComponentServer");
 
 	/**
 	 * 
 	 */
 	public ComponentServer() {
-		m_logger = ComponentLogger
-				.getLogger("cast.server.java.ComponentServer");
-		m_logAddy = new LogAdditions("cast.server.java.ComponentServer", "");
 	}
 
 	/**
@@ -138,19 +134,6 @@ public class ComponentServer extends Application {
 		super(_signalPolicy);
 	}
 
-	private void info(Object _o) {
-		m_logger.info(_o, m_logAddy);
-	}
-
-//	private void debug(Object _o) {
-//		m_logger.debug(_o, m_logAddy);
-//	}
-//
-//	private void trace(Object _o) {
-//		m_logger.trace(_o, m_logAddy);
-//	}
-
-	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -159,7 +142,7 @@ public class ComponentServer extends Application {
 	@Override
 	public int run(String[] arg0) {
 
-		info("Java server: \"" + CASTRELEASESTRING.value + "\"");
+		logger.info("Java server: \"" + CASTRELEASESTRING.value + "\"");
 
 		Communicator ic = communicator();
 		ObjectAdapter adapter = ic.createObjectAdapterWithEndpoints(
@@ -168,8 +151,8 @@ public class ComponentServer extends Application {
 		Identity id = new Identity("ComponentFactory", "ComponentFactory");
 		adapter.add(new CASTComponentFactory(), id);
 
-		Identity manid = new Identity("comp.man",
-				CASTComponentManager.class.getCanonicalName());
+		Identity manid = new Identity("comp.man", CASTComponentManager.class
+				.getCanonicalName());
 		adapter.add(new CASTComponentManager(), manid);
 
 		// adapter.addServantLocator(new cast.server.ComponentLocator(), "");

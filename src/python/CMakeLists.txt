@@ -5,7 +5,7 @@ set(CPP_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/../c++)
 
 set(INCLUDE_DIRS
    ${CPP_SRC_DIR}
-   ${ICE_HOME}/include
+   # ${ICE_HOME}/include
    )
 set(LIBRARY_DIRS
    ${CPP_BIN_DIR}/cast/architecture
@@ -22,12 +22,6 @@ endif(NOT "${LOG4CXX_LIBRARY_DIRS}" STREQUAL "")
 foreach(idir ${INCLUDE_DIRS})
    if(NOT "${idir}" STREQUAL "")
       set(INCLUDE_DIRS_LIST "'${idir}', ${INCLUDE_DIRS_LIST}")
-   endif(NOT "${idir}" STREQUAL "")
-endforeach(idir)
-
-foreach(idir ${ICE_LIBS})
-   if(NOT "${idir}" STREQUAL "")
-      set(ICE_LIBS_LIST "'${idir}', ${ICE_LIBS_LIST}")
    endif(NOT "${idir}" STREQUAL "")
 endforeach(idir)
 
@@ -53,7 +47,7 @@ add_custom_command(OUTPUT ${SETUP_PY}
    )
 
 add_custom_target(PythonCAST ALL
-  DEPENDS ${SETUP_PY} CASTCore
+  DEPENDS ${SETUP_PY}
   COMMAND python setup.py build
   WORKING_DIRECTORY ${SETUP_DIR}
   COMMENT "running setup.py build"

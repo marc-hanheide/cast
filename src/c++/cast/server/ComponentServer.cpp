@@ -27,9 +27,6 @@ namespace cast {
   using namespace core::logging;
   using namespace cdl;
 
-  typedef log4cxx::helpers::ObjectPtrT<core::logging::ComponentLogger> ComponentLoggerPtr;
-
-
   class ComponentServer : virtual public Ice::Application { 
   public: 
 
@@ -39,14 +36,11 @@ namespace cast {
       //
       cast::core::logging::initLogging();
 
-      ComponentLoggerPtr logger = ComponentLogger::getLogger("cast.server.c++.ComponentServer");
-      CAST_INFO(logger, "CPP server version: \""<<cdl::CASTRELEASESTRING<<"\"", LogAdditions("cast.server.c++.ComponentServer","","")); 
-
-      //streams seem to have memory issues
-      //log4cxx::logstream logstream(logger, Level::getInfo());
-      //logstream<<"CPP server version: \""<<cdl::CASTRELEASESTRING<<"\""<<LOG4CXX_ENDMSG;
+      log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("cast.server.c++.ComponentServer");
+	     
+      log4cxx::logstream logstream(logger, Level::getInfo());
+      logstream<<"CPP server version: \""<<cdl::CASTRELEASESTRING<<"\""<<LOG4CXX_ENDMSG;
      
-
       CommunicatorPtr ic = communicator();
       
       char buf[50];

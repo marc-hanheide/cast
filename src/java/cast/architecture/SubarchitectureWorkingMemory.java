@@ -25,6 +25,12 @@ import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+
+
+import xsrad.logging.In;
+import xsrad.logging.Out;
+import xsrad.logging.Translate;
+
 import Ice.Current;
 import cast.AlreadyExistsOnWMException;
 import cast.ConsistencyException;
@@ -95,6 +101,12 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 	private final Lock m_readLock;
 	private final Lock m_writeLock;
 
+	// JOTTO
+	private Map<WorkingMemoryReaderComponentPrx, String> readerIdMap;
+	private Map<String, ArrayList<WorkingMemoryChangeFilter>> componentIDToFilterMap;
+	// JOTTO end
+	
+	
 	/**
 	 * Construct new object with a unique id. Name should be created with
 	 * createName.
@@ -121,6 +133,9 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 		m_readWriteLock = new ReentrantReadWriteLock();
 		m_readLock = m_readWriteLock.readLock();
 		m_writeLock = m_readWriteLock.writeLock();
+		
+		readerIdMap = new HashMap<WorkingMemoryReaderComponentPrx,String>();
+		componentIDToFilterMap = new HashMap<String, ArrayList<WorkingMemoryChangeFilter>>();
 	}
 
 	/*
@@ -176,7 +191,11 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 		// debug(_src);
 		// debug(CASTUtils.toString(_data));
 		// }
+		
 
+		
+		
+		
 		m_componentFilters.put(_data, _src, _priority);
 
 		// if (m_logger.getLevel().isGreaterOrEqual(Level.TRACE)) {
@@ -197,6 +216,9 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 		// debug(CASTUtils.toString(_data));
 		// }
 
+
+		m_componentFilters.put(_data, _src, _priority);
+		
 		m_wmFilters.put(_data, _src, _priority);
 
 		// if (m_logger.getLevel().isGreaterOrEqual(Level.TRACE)) {
@@ -501,6 +523,7 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			// and it might have
 
 			entry = m_workingMemory.get(_id);
+			
 			if (entry != null) {
 				return entry;
 			} else {
@@ -542,6 +565,8 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 				new WorkingMemoryAddress(_id, getSubarchitectureID()), _type,
 				_typeHierarchy, getCASTTime());
 
+
+			
 		// if (m_logger.getLevel().isGreaterOrEqual(Level.TRACE)) {
 		debug("SAWN.sigCh: " + CASTUtils.toString(wmc));
 		// }
@@ -550,7 +575,36 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 		if (isAllowedChange(wmc)) {
 			// send locally
 			for (WorkingMemoryReaderComponentPrx reader : m_readers) {
+				
 				reader.receiveChangeEvent(wmc);
+				
+				// JOTTO
+				ArrayList<WorkingMemoryChangeFilter> toCheck = componentIDToFilterMap.get(readerIdMap.get(reader));
+				for(int i=0; i < toCheck.size(); i++)
+				{
+					WorkingMemoryChangeFilter filter = toCheck.get(i);
+					if((filter.operation.ordinal() == 4)|| (filter.operation.ordinal() == wmc.operation.ordinal()) && checkSuperTypes(filter.type,wmc.superTypes))
+					{
+						In in = new In(readerIdMap.get(reader));
+						in.setAction(Translate.translateCastActionType2XsradActionType(_op.ordinal()));
+						in.setCondition(_type);
+						in.setDataType(_type);
+						
+						// better idea ? (:
+						try{
+							String[] tmp = _src.split("\\.");
+							String archName = tmp[0];
+							in.setContext(archName+"_wm");
+						}catch(Exception e){}
+						
+						in.log();
+						break;
+					}
+				}
+				// JOTTO end
+				
+				
+
 			}
 		} else {
 			// debug("SAWN.sigCh: not sending locally");
@@ -561,7 +615,7 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			for (String wmID : m_workingMemories_oneway.keySet()) {
 				// debug("SAWN.sigCh: send to?: " + wmID);
 
-				if (isAllowedChange(wmID, wmc)) {
+				if (isAllowedChange(wmID, wmc)) {					
 					// log("SubarchitectureWorkingMemory.signalChange(): " +
 					// wmID);
 					m_workingMemories_oneway.get(wmID).receiveChangeEvent(wmc);
@@ -599,9 +653,19 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 
 	public void addReader(WorkingMemoryReaderComponentPrx _reader,
 			Current __current) {
+		// JOTTO
+		WorkingMemoryReaderComponentPrx converted = WorkingMemoryReaderComponentPrxHelper
+		.uncheckedCast(_reader.ice_oneway());
+		
+		readerIdMap.put(converted, _reader.getID());
+		componentIDToFilterMap.put(_reader.getID(),new ArrayList<WorkingMemoryChangeFilter>());
+		
+		//XsradDebug.log("addReader readerID " + _reader.getID());
+		// JOTTO end
+		
+		
 		// convert to one-way proxies for speed
-		m_readers.add(WorkingMemoryReaderComponentPrxHelper
-				.uncheckedCast(_reader.ice_oneway()));
+		m_readers.add(converted);
 
 	}
 
@@ -622,8 +686,13 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			String _component, Ice.Object _entry, Current __current)
 			throws AlreadyExistsOnWMException, UnknownSubarchitectureException {
 
+
+			
+		
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
+			
+			
 			// if it already exists complain bitterly
 			if (m_workingMemory.contains(_id)) {
 				throw new AlreadyExistsOnWMException(
@@ -634,6 +703,16 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			}
 			// else get stuck in
 			else {
+				// JOTTO
+				Out out = new Out(_component);
+				out.setAction("add");
+				out.setCondition(_type);
+				out.setContext(_subarch + "_wm");
+				out.setDataType(_type);
+				out.log();
+				// JOTTO end
+				
+				
 				// fine then
 				m_writeLock.lock();
 				boolean result = addToWorkingMemory(_id,
@@ -657,6 +736,9 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 	public void deleteFromWorkingMemory(String _id, String _subarch,
 			String _component, Current __current)
 			throws DoesNotExistOnWMException, UnknownSubarchitectureException {
+		
+
+		
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
 			m_writeLock.lock();
@@ -666,11 +748,23 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			WorkingMemoryEntry entry;
 			try {
 				entry = deleteFromWorkingMemory(_id, _component);
+				
+				// JOTTO
+				Out out = new Out(_component);
+				out.setAction("delete");
+				out.setCondition(entry.type);
+				out.setContext(_subarch + "_wm");
+				out.setDataType(entry.type);
+				out.log();
+				// JOTTO end
+				
 				// sanity check
 				assert (entry != null);
 				signalChange(WorkingMemoryOperation.DELETE, _component, _id,
 						entry.type, entry.entry.ice_ids());
 
+			} catch (DoesNotExistOnWMException e) {
+				throw e;
 			} finally {
 				m_writeLock.unlock();
 			}
@@ -756,7 +850,16 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			int _count, String _component,
 			WorkingMemoryEntrySeqHolder _entries, Current __current)
 			throws UnknownSubarchitectureException {
-
+		
+		// JOTTO
+		In in = new In(_component);
+		in.setAction("get");
+		in.setCondition(_type);
+		in.setDataType(_type);
+		in.setContext(_subarch+"_wm");
+		in.log();
+		// JOTTO end
+		
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
 			if (_entries.value == null) {
@@ -789,6 +892,9 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 	public WorkingMemoryEntry getWorkingMemoryEntry(String _id,
 			String _subarch, String _component, Current __current)
 			throws DoesNotExistOnWMException, UnknownSubarchitectureException {
+		
+
+		
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
 			// println("local query");
@@ -796,8 +902,24 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			WorkingMemoryEntry entry;
 			try {
 				entry = getEntryByID(_id, _component);
+				// JOTTO
+				In in = new In(_component);
+				in.setAction("get");
+				in.setCondition(entry.type);
+				in.setDataType(entry.type);
+				in.setContext(_subarch+"_wm");
+				in.log();
+				// JOTTO end
+				
+				
+			} catch (DoesNotExistOnWMException e) {
+				throw e;
 			} finally {
-				m_readLock.unlock();
+				try {
+					m_readLock.unlock();
+				} catch (IllegalMonitorStateException e) {
+					getLogger().warn("Problem unlocking SAWM.m_readLock, component in question: " + _component,e);
+				}
 			}
 			return entry;
 		} else {
@@ -814,7 +936,7 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			throws DoesNotExistOnWMException, UnknownSubarchitectureException {
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
-			//
+			//                                                                                                                                                                                                        
 			if (m_workingMemory.contains(_id)) {
 
 				// debug("%s locking: %s",_component.c_str(),_id.c_str());
@@ -859,8 +981,20 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			String _type, String _component, Ice.Object _entry,
 			Current __current) throws DoesNotExistOnWMException,
 			UnknownSubarchitectureException {
+		
+		
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
+			
+			// JOTTO
+			Out out = new Out(_component);
+			out.setAction("replace");
+			out.setCondition(_type);
+			out.setDataType(_type);
+			out.setContext(_subarch+"_wm");
+			out.log();
+			// JOTTO end
+			
 			m_writeLock.lock();
 			// DANGER this might produce an exception... change to critical
 			// section
@@ -873,6 +1007,8 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 				signalChange(WorkingMemoryOperation.OVERWRITE, _component, _id,
 						_type, _entry.ice_ids());
 
+			} catch (DoesNotExistOnWMException e) {
+				throw e;
 			} finally {
 				m_writeLock.unlock();
 			}
@@ -884,6 +1020,17 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 
 	}
 
+	private boolean checkSuperTypes(String filterType, String[] superTypes)
+	{
+		for(String superType: superTypes)
+		{
+			if(superType.equals(filterType))
+				return true;
+		}
+		return false;
+	}
+	
+	
 	public void receiveChangeEvent(WorkingMemoryChange _wmc, Current __current) {
 		lockComponent();
 
@@ -899,6 +1046,42 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 
 			for (WorkingMemoryReaderComponentPrx reader : m_readers) {
 				reader.receiveChangeEvent(_wmc);
+				
+				
+				// JOTTO
+				ArrayList<WorkingMemoryChangeFilter> toCheck = componentIDToFilterMap.get(readerIdMap.get(reader));
+				//XsradDebug.log("receiveChangeEvent" + toCheck.size());
+				
+				for(int i=0; i < toCheck.size(); i++)
+				{
+					WorkingMemoryChangeFilter filter = toCheck.get(i);
+					//XsradDebug.log("receiveChangeEvent filter operation" + filter.operation.ordinal());
+					//XsradDebug.log("receiveChangeEvent wmc operation" + _wmc.operation.ordinal());
+					//XsradDebug.log("receiveChangeEvent filter type" + filter.type);
+					//XsradDebug.log("receiveChangeEvent wmc type" + _wmc.type);
+					//checkSuperTypes(filter.type,_wmc.superTypes);
+					if((filter.operation.ordinal() == 4)|| (filter.operation.ordinal() == _wmc.operation.ordinal()) && checkSuperTypes(filter.type,_wmc.superTypes))
+					{
+						In in = new In(readerIdMap.get(reader));
+						in.setAction(Translate.translateCastActionType2XsradActionType(_wmc.operation.ordinal()));
+						in.setCondition(_wmc.type);
+						in.setDataType(_wmc.type);
+						
+						// better idea ? (:
+						try{
+							String[] tmp = _wmc.src.split("\\.");
+							String archName = tmp[0];
+							in.setContext(archName+"_wm");
+						}catch(Exception e){}
+						
+						in.log();
+						break;
+					}
+				}
+				// JOTTO end
+				
+				
+				
 			}
 
 		}
@@ -909,9 +1092,17 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 
 	public void registerComponentFilter(WorkingMemoryChangeFilter _filter,
 			int _priority, Current __current) {
+		
+		// JOTTO
+		//XsradDebug.log("addComponentChangeFilter src " + _filter.origin);
+		componentIDToFilterMap.get(_filter.origin).add(_filter);
+		// JOTTO end
+		
+		
 		debug("SubarchitectureWorkingMemory.registerComponentFilter()");
 		m_componentFilters.put(_filter, _filter.origin, _priority);
 
+		
 		// cout<<"new filters length: "<<m_componentFilters.size()<<endl;
 		// cout<<"only local: "<<m_componentFilters.localFiltersOnly()<<endl;
 
@@ -929,6 +1120,8 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 	public void registerWorkingMemoryFilter(WorkingMemoryChangeFilter _filter,
 			String _subarch, int _priority, Current __current) {
 		debug("SubarchitectureWorkingMemory.registerWorkingMemoryFilter()");
+		
+		
 		// debug("SubarchitectureWorkingMemory::addWMChangeFilter()");
 		// ostringstream outStream;
 		// outStream<<_filter;
@@ -978,8 +1171,8 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			Current __current) {
 		// println("setting: \"" + _subarch + "\"");
 		m_workingMemories.put(_subarch, _wm);
-		m_workingMemories_oneway.put(_subarch,
-				WorkingMemoryPrxHelper.uncheckedCast(_wm.ice_oneway()));
+		m_workingMemories_oneway.put(_subarch, WorkingMemoryPrxHelper
+				.uncheckedCast(_wm.ice_oneway()));
 	}
 
 	public boolean tryLockEntry(String _id, String _subarch, String _component,
@@ -987,7 +1180,7 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			throws DoesNotExistOnWMException, UnknownSubarchitectureException {
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
-			//
+			//                                                                                                                                                                                                        
 			if (m_workingMemory.contains(_id)) {
 				try {
 					if (m_permissions.tryLock(_id, _component, _perm)) {
@@ -1021,7 +1214,7 @@ public class SubarchitectureWorkingMemory extends SubarchitectureComponent
 			DoesNotExistOnWMException, UnknownSubarchitectureException {
 		// if this is for me
 		if (getSubarchitectureID().equals(_subarch)) {
-			//
+			//                                                                                                                                                                                                        
 			if (m_workingMemory.contains(_id)) {
 
 				// this wasn't in the original design, but seems necessary now

@@ -36,8 +36,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import cast.cdl.COMPONENTIDSKEY;
 import cast.cdl.COMPONENTNUMBERKEY;
@@ -818,98 +816,6 @@ public class CASTConfigParser {
 
 	}
 
-	private static String CMD_VARSET = "SETVAR";
-	private static String CMD_VARDEFAULT = "VARDEFAULT";
-	private static HashMap<String, String> m_configVars = new HashMap<String, String>();
-	private static Pattern m_regexConfigVar =
-	 	Pattern.compile("^\\s*([A-Z]+)\\s+([a-zA-Z][a-zA-Z0-9_]*)\\s*=\\s*(.*)\\s*$");
-
-	// @returns Index of last processed line
-	private static int parseSetvarLine(ArrayList<String> _lines, int start) {
-		int i = start;
-		String line = (String) _lines.get(i);
-		Matcher m = m_regexConfigVar.matcher(line);
-		if (! m.matches()) {
-			//System.out.println(" ... not matched: " + line);
-			return i;
-		}
-		String token = m.group(2);
-		if (m.group(1).equals(CMD_VARDEFAULT)) {
-			if (m_configVars.containsKey(token)) {
-				//System.out.println(token + " ... already defined ");
-				return i;
-			}
-		}
-		String value = m.group(3);
-		if (value.equals("<multiline>")) {
-			i++;
-			value = "";
-			while(i < _lines.size()) {
-				line = (String) _lines.get(i);
-				line = line.trim();
-				if (! line.startsWith(COMMENT_CHAR)) {
-					if (line.equals("</multiline>")) break;
-					if (value.length() == 0) value = line;
-					else value = value + " " + line;
-				}
-				i++;
-			}
-		}
-		value = replaceVars(value);
-		//System.out.println(token + " ... Value ... " + value);
-		m_configVars.put(token, value);
-		return i;
-	}
-
-	private static String replaceVars(String line) {
-		int pos = line.indexOf("%(");
-		if (pos < 0) {
-			return line;
-		}
-		int lastpos = 0;
-		String res = "";
-		while (pos >= 0) {
-			int end = line.indexOf(")", pos+1);
-			if (end < 0) break;
-			String token = line.substring(pos+2, end);
-			//System.out.println(token);
-			if (m_configVars.containsKey(token)) {
-				res = res + line.substring(lastpos, pos) + m_configVars.get(token);
-			}
-			else {
-				System.out.println("CAST parser: Variable %(" + token + ")  not defined.");
-				res = res + line.substring(lastpos, end+1);
-			}
-			lastpos = end + 1;
-			pos = line.indexOf("%(", end+1);
-		}
-		if (lastpos < line.length()) {
-			res = res + line.substring(lastpos);
-		}
-		return res;
-	}
-
-	private static void expandVars(ArrayList<String> _lines) {
-		ArrayList<String> orgLines = new ArrayList<String>(_lines);
-		_lines.clear();
-
-		for (int i = 0; i < orgLines.size(); i++) {
-			String line = (String) orgLines.get(i);
-
-			if (line.startsWith(COMMENT_CHAR)) {
-				_lines.add(line);
-			}
-			else {
-				if (line.startsWith(CMD_VARSET) || line.startsWith(CMD_VARDEFAULT)) {
-					i = parseSetvarLine(orgLines, i);
-				}
-				else {
-					_lines.add(replaceVars(line));
-				}
-			}
-		}
-	}
-
 	/**
 	 * @param _lines
 	 * @throws ArchitectureConfigurationException
@@ -1255,11 +1161,6 @@ public class CASTConfigParser {
 			// setup container to hold everything
 			m_architecture = new ArchitectureConfiguration();
 
-			File configFile = new File(_filename);
-			m_configVars.put("CONFIG_DIR", configFile.getAbsoluteFile().getParent());
-			expandVars(lines);
-			System.out.println("CONFIG_DIR=" + m_configVars.get("CONFIG_DIR"));
-
 			processLines(lines);
 			m_extras = parseExtras(lines);
 		} catch (FileNotFoundException e) {
@@ -1279,7 +1180,6 @@ public class CASTConfigParser {
 			init();
 			m_architecture = new ArchitectureConfiguration();
 			ArrayList<String> lines = readString(_config);
-			expandVars(lines);
 			return processLines(lines);
 		} catch (IOException e) {
 			throw new ArchitectureConfigurationException(

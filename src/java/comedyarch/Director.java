@@ -78,11 +78,11 @@ public class Director extends ManagedComponent {
 		try {
 			DirectorAction action = getMemoryEntry(_actionChange.address,
 					DirectorAction.class);
-			switch (action.action) {
-			case AskTheAudience:
+			switch (action.action.value()) {
+			case DirectorActionType._AskTheAudience:
 				askTheAudience(action.address);
 				break;
-			case CheckTheReaction:
+			case DirectorActionType._CheckTheReaction:
 				checkTheReaction(action.address);
 				break;
 			default:

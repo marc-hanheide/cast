@@ -26,7 +26,7 @@ namespace castlog = cast::core::logging;
 static void doex(Exception& ex)
 {
    try {
-     printf("*** PyLog4Cxx Error: %s\n", ex.what());
+      printf("*** PyLog4Cxx Error: %s\n", ex.what());
    }
    catch (...) {}
 }
@@ -92,17 +92,13 @@ PyObject* L4C_configure(PyObject *self, PyObject *args)
       return NULL;
 
    try {
-//      if (fname == NULL || strlen(fname) < 1){
-//        //BasicConfigurator::configure();
-       
-//     printf("*** initialising logging... ");
+     if (fname == NULL || strlen(fname) < 1){
+       //BasicConfigurator::configure();
        castlog::initLogging();
-       //   printf("*** DONE\n");
-
-//      }
-//      else {
-//        PropertyConfigurator::configure(fname);
-//      }
+     }
+     else {
+       PropertyConfigurator::configure(fname);
+     }
    }
    catch(Exception& ex) {
       doex(ex);
@@ -221,8 +217,6 @@ static PyMemberDef Logger_members[] = {
 
 PyObject* Logger_do_log(LevelPtr level, PyObject *o_self, PyObject *args)
 {
-  //  printf("Logger_do_log\n");
-
    char empty = '\0';
    char *message = &empty;
    if (!PyArg_ParseTuple(args, "|s", &message))

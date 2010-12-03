@@ -149,9 +149,8 @@ public class CASTUtils {
 			throws CASTException {
 
 		int port = CASTUtils.languageToPort(_componentLanguage);
-		ObjectPrx prx = CASTUtils.getIceServer(_componentID,
-				CASTUtils.toServantCategory(_cls), _componentHost, port,
-				_communicator);
+		ObjectPrx prx = CASTUtils.getIceServer(_componentID, CASTUtils
+				.toServantCategory(_cls), _componentHost, port, _communicator);
 
 		// instantiate the helper class
 		String helperClassName = _prxCls.getCanonicalName() + "Helper";
@@ -185,12 +184,12 @@ public class CASTUtils {
 	 * @param _cls
 	 * @return
 	 */
-	public static ObjectPrx getIceServer(String _componentID, String _category,
+	static ObjectPrx getIceServer(String _componentID, String _category,
 			String _host, int _port, Communicator _communicator) {
 		Identity id = new Identity(_componentID, _category);
 
-		StringBuilder details = new StringBuilder(
-				_communicator.identityToString(id));
+		StringBuilder details = new StringBuilder(_communicator
+				.identityToString(id));
 		details.append(":default -h ");
 		details.append(_host);
 		details.append(" -p ");
@@ -229,12 +228,12 @@ public class CASTUtils {
 
 		// String clsName = _cls.getCanonicalName();
 		// String[] bits = clsName.split("\\.");
-		//
+		//		
 		// assert(bits.length > 0);
-		//
+		//		
 		// bits[bits.length-1] = "_" + bits[bits.length-1] + "Disp";
 		// StringBuilder dispName = new StringBuilder(bits[0]);
-		//
+		//		
 		// for (int i = 1; i < bits.length; i++) {
 		// dispName.append(".");
 		// dispName.append(bits[i]);
@@ -299,7 +298,6 @@ public class CASTUtils {
 			throws ComponentCreationException {
 		ComponentFactoryPrx factory = getComponentFactoryForID(_id, _ic, _host,
 				_port);
-		logCreation(_id, _ic, _host, _port);
 		return factory.newWorkingMemory(_id.name, _id.category, false);
 	}
 
@@ -308,7 +306,6 @@ public class CASTUtils {
 			throws ComponentCreationException {
 		ComponentFactoryPrx factory = getComponentFactoryForID(_id, _ic, _host,
 				_port);
-		logCreation(_id, _ic, _host, _port);
 		return factory.newTaskManager(_id.name, _id.category, false);
 	}
 
@@ -317,15 +314,7 @@ public class CASTUtils {
 			throws ComponentCreationException {
 		ComponentFactoryPrx factory = getComponentFactoryForID(_id, _ic, _host,
 				_port);
-
-		logCreation(_id, _ic, _host, _port);
 		return factory.newManagedComponent(_id.name, _id.category, false);
-	}
-
-	private static void logCreation(Identity _id, Communicator _ic,
-			String _host, int _port) {
-		System.out.println(concatenate("[creating ", _id.name, " at ", _host,
-				":", _port, "]"));
 	}
 
 	public static UnmanagedComponentPrx createUnmanagedComponent(Identity _id,
@@ -333,7 +322,6 @@ public class CASTUtils {
 			throws ComponentCreationException {
 		ComponentFactoryPrx factory = getComponentFactoryForID(_id, _ic, _host,
 				_port);
-		logCreation(_id, _ic, _host, _port);
 		return factory.newUnmanagedComponent(_id.name, _id.category, false);
 	}
 
@@ -343,17 +331,16 @@ public class CASTUtils {
 		ComponentFactoryPrx factory = getComponentFactoryForID(_id, _ic, _host,
 				_port);
 		assert (factory != null);
-		logCreation(_id, _ic, _host, _port);
 		return factory.newComponent(_id.name, _id.category, false);
 	}
 
 	public static CASTComponentPrx getComponent(Identity _id, Communicator _ic,
-			String _host, int _port) throws CASTException {
+			String _host, int _port) {
 		ObjectPrx base = _ic.stringToProxy(_ic.identityToString(_id)
 				+ ":default -h " + _host + " -p " + _port);
 
 		if (base == null) {
-			throw new CASTException("Cannot create proxy");
+			throw new RuntimeException("Cannot create proxy");
 		}
 
 		CASTComponentPrx prx = CASTComponentPrxHelper.checkedCast(base);
@@ -493,25 +480,26 @@ public class CASTUtils {
 	}
 
 	public static String toString(FilterRestriction _restriction) {
-		switch (_restriction) {
-		case ALLSA:
+		switch (_restriction.value()) {
+		case FilterRestriction._ALLSA:
 			return "ALL_SA";
-		case LOCALSA:
+		case FilterRestriction._LOCALSA:
 			return "LOCAL_SA";
 		}
-		throw new RuntimeException("Unknown enum value: " + _restriction);
+		throw new RuntimeException("Unknown enum value: "
+				+ _restriction.value());
 
 	}
 
 	public static String toString(WorkingMemoryOperation _op) {
-		switch (_op) {
-		case ADD:
+		switch (_op.value()) {
+		case WorkingMemoryOperation._ADD:
 			return "ADD";
-		case OVERWRITE:
+		case WorkingMemoryOperation._OVERWRITE:
 			return "OVERWRITE";
-		case DELETE:
+		case WorkingMemoryOperation._DELETE:
 			return "DELETE";
-		case GET:
+		case WorkingMemoryOperation._GET:
 			return "GET";
 		default:
 			return "UNKNOWN";

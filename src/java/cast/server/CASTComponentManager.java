@@ -7,7 +7,6 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import Ice.Current;
-import cast.CASTException;
 import cast.cdl.ComponentDescription;
 import cast.interfaces._ComponentManagerDisp;
 
@@ -33,21 +32,19 @@ public class CASTComponentManager extends _ComponentManagerDisp {
 		m_descriptions.put(_description.componentName, _description);
 	}
 
+	public ComponentDescription getComponentDescription(String _componentID,
+			Current __current) {
+		ComponentDescription desc = m_descriptions.get(_componentID);
+		
+		if(desc == null) {
+			throw new RuntimeException("No description for: " + _componentID + ": " + m_descriptions.keySet());
+		}
+		return desc;
+	}
+
 	public Map<String, ComponentDescription> getComponentDescriptions(
 			Current __current) {
 		return m_descriptions;
-	}
-
-	public ComponentDescription getComponentDescription(String _componentID,
-			Current __current) throws CASTException {
-
-		ComponentDescription desc = m_descriptions.get(_componentID);
-
-		if (desc == null) {
-			throw new CASTException("No description for: " + _componentID
-					+ ": " + m_descriptions.keySet());
-		}
-		return desc;
 	}
 
 }

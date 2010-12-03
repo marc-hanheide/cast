@@ -2,18 +2,17 @@
 # ComponentServer.py
 #
 # Author(s):
-# Thomas Keller, Michael Brenner, Nick Hawes, Marko Mahnic
+# Thomas Keller, Michael Brenner, Nick Hawes
 #
 # Date:
 # 06/2009
 
 import sys
 import Ice
-import CDL_ice
 import cast
 import cast.pylog4cxx as pylog4cxx
 
-
+PYTHONSERVERPORT = cast.cdl.PYTHONSERVERPORT
 
 class CASTComponentFactory(cast.interfaces.ComponentFactory):
  def newComponent(self, id, type, newProcess, current):
@@ -85,7 +84,7 @@ class ComponentServer(Ice.Application):
    logger = pylog4cxx.Logger("cast.server.python.ComponentServer", "", "")
    logger.info("Python server version: \"%s\"" % (cast.cdl.CASTRELEASESTRING))
 
-   portArgs = "tcp -p %d" % cast.cdl.PYTHONSERVERPORT
+   portArgs = "default -p %d" % PYTHONSERVERPORT
    adapter = ic.createObjectAdapterWithEndpoints("ComponentServer3", portArgs)
 
    idty = Ice.Identity()

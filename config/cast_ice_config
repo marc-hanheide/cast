@@ -1,7 +1,7 @@
 Ice.ThreadPool.Client.Size=1 
-Ice.ThreadPool.Client.SizeMax=300 
+Ice.ThreadPool.Client.SizeMax=20 
 Ice.ThreadPool.Server.Size=1 
-Ice.ThreadPool.Server.SizeMax=300 
+Ice.ThreadPool.Server.SizeMax=20 
 
 Ice.Trace.Locator=0
 Ice.Trace.Network=0

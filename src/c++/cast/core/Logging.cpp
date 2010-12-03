@@ -29,19 +29,18 @@ namespace cast {
   namespace logging {
 
 
-    bool configureFromFile(const std::string & _filename) {
-      File propertiesFile(_filename);
-      Pool p;
-      if (propertiesFile.exists(p)) {
-	//PropertyConfigurator::configure(propertiesFile);
-	PropertyConfigurator::configure(_filename);
+  bool configureFromFile(const std::string & _filename) {
+    File propertiesFile(_filename);
+    Pool p;
+    if (propertiesFile.exists(p)) {
+      PropertyConfigurator::configure(propertiesFile);
 	return true;
       }
       else {
 	return false;
       }
     }
-    
+
     bool configureFromEnvironment() {      
       char * propertiesFileString = getenv(LOGGINGENVVAR.c_str());    
       if (propertiesFileString != NULL) {
@@ -70,10 +69,10 @@ namespace cast {
 
     void configureDefault() {
       log4cxx::helpers::Properties prop;
-      prop.setProperty("log4j.rootLogger", "INFO, stdout");
-      prop.setProperty("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-      prop.setProperty("log4j.appender.stdout.layout", "cast.core.logging.ComponentLayout");
-      prop.setProperty("log4j.appender.stdout.layout.ConversionPattern",RETROCONVERSIONPATTERN);
+      prop.put("log4j.rootLogger", "INFO, stdout");
+      prop.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+      prop.put("log4j.appender.stdout.layout", "cast.core.logging.ComponentLayout");
+      prop.put("log4j.appender.stdout.layout.ConversionPattern",RETROCONVERSIONPATTERN);
       PropertyConfigurator::configure(prop);
     }
 

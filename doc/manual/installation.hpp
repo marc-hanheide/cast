@@ -21,10 +21,6 @@ be installed from the standard repositories.
   - Ubuntu: sun-java6-jdk
   - OSX: already installed 
 
- - Python, tested with version 2.6. 
-  - Ubuntu: python-2.6
-  - OSX: already installed
-
  - <a href="http://www.cmake.org">Cmake</a> version 2.6 or above. 
   - Ubuntu: cmake
   - OSX (macports): cmake
@@ -42,7 +38,7 @@ be installed from the standard repositories.
   - OSX (macports): boost
 
  - <a href="http://logging.apache.org/log4j/1.2/index.html">log4j</a>  and <a href="http://logging.apache.org/log4cxx/index.html">log4cxx</a>
-  - Ubuntu: liblog4j1.2-java liblog4cxx10-dev
+  - Ubuntu: liblog4j1.2-java liblog4j1.2-java
   - OSX (macports): jakarta-log4j log4cxx
 
 
@@ -71,7 +67,7 @@ sudo update-alternatives --config java
 $CAST_ROOT. Change into that directory.</li>
 
 
-<li> Edit $CAST_ROOT/build.properties so that the "value.install.prefix" property
+<li> Edit $CAST_ROOT/build.xml so that the "install.prefix" property
 is the prefix where you'd like to install CAST on your system. The
 default is /usr/local.</li>
 
@@ -131,7 +127,7 @@ then CAST is installed!
 
 <li> Configure your system environment to find CAST. This means
 including <install.prefix>/bin in your PATH, and
-<install.prefix>/share/java/cast.jar in your CLASSPATH. Make sure you do this in a way the persists across sessions (e.g. by editing your .bashrc or .profile files).
+<install.prefix>/share/java/cast.jar in your CLASSPATH.
 
 </ol>
 

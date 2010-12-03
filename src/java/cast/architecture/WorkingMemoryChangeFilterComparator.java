@@ -98,10 +98,10 @@ public class WorkingMemoryChangeFilterComparator implements
 		// equality purposes at least)
 
 		// operation
-		if (_f1.operation.ordinal() < _f2.operation.ordinal()) {
+		if (_f1.operation.value() < _f2.operation.value()) {
 			return BEFORE;
 		}
-		if (_f1.operation.ordinal() > _f2.operation.ordinal()) {
+		if (_f1.operation.value() > _f2.operation.value()) {
 			return AFTER;
 		}
 

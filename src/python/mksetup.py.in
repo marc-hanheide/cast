@@ -12,7 +12,6 @@ pairs={
     '${LOG4CXX_LIBRARIES}': "@LOG4CXX_LIBRARIES@",
     '${INCLUDE_DIRS_LIST}': "@INCLUDE_DIRS_LIST@".strip(', '),
     '${LIBRARY_DIRS_LIST}': "@LIBRARY_DIRS_LIST@".strip(', '),
-    '${ICE_LIBS_LIST}': "@ICE_LIBS_LIST@".strip(', '),
 }
 for i in xrange(len(lines)):
     for k in pairs.keys():

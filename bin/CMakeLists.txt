@@ -4,8 +4,8 @@ set(server_exe cast-server)
 set(server_script run-cast-server.sh)
 
 add_custom_target(${server_exe}  ALL
-		   COMMAND echo "#!/bin/bash" > ${server_exe} 
-	           COMMAND echo "# Auto-generated CAST server script" >> ${server_exe} 
+		   COMMAND echo "#!/bin/bash" >> ${server_exe} 
+	           COMMAND echo "# Auto-generated CAST server script" > ${server_exe} 
 		   COMMAND echo "${CMAKE_INSTALL_PREFIX}/bin/${server_script} ${CMAKE_INSTALL_PREFIX}" >> ${server_exe} 
 		   COMMENT "generating server script"
 		   WORKING_DIRECTORY ${CAST_ROOT}/bin
@@ -15,10 +15,9 @@ add_custom_target(${server_exe}  ALL
 set(client_exe cast-client)
 set(client_script run-cast-client.sh)
 
-		         
-add_custom_target(${client_exe} ALL
-		   COMMAND echo "#!/bin/bash" > ${client_exe} 
-	           COMMAND echo "# Auto-generated CAST client script" >> ${client_exe} 
+		         add_custom_target(${client_exe} ALL
+		   COMMAND echo "#!/bin/bash" >> ${client_exe} 
+	           COMMAND echo "# Auto-generated CAST client script" > ${client_exe} 
 		   COMMAND echo "if [ $# -ne 1 ] ; then" >> ${client_exe}
 		   # cmake is borken for the below
 		   # COMMAND echo "   echo "Usage: `basename \$0` <cast file>" " >> ${client_exe}

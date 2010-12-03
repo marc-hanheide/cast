@@ -23,12 +23,12 @@ add_custom_command(TARGET CDL
 		   COMMENT "Generating Python source"
 		   )
 
-# set( slice2py_results ${CAST_ROOT}/src/python/cast/__init__.py
-# ${CAST_ROOT}/src/python/cast/cdl/__init__.py
-# ${CAST_ROOT}/src/python/cast/cdl/testing/__init__.py
-# ${CAST_ROOT}/src/python/cast/examples/__init__.py
-# ${CAST_ROOT}/src/python/cast/examples/autogen/__init__.py
-# ${CAST_ROOT}/src/python/cast/interfaces/__init__.py)
+set( slice2py_results ${CAST_ROOT}/src/python/cast/__init__.py
+${CAST_ROOT}/src/python/cast/cdl/__init__.py
+${CAST_ROOT}/src/python/cast/cdl/testing/__init__.py
+${CAST_ROOT}/src/python/cast/examples/__init__.py
+${CAST_ROOT}/src/python/cast/examples/autogen/__init__.py
+${CAST_ROOT}/src/python/cast/interfaces/__init__.py)
 
 
-# install(FILES ${slice2py_results} DESTINATION lib/cast)
+install(FILES ${slice2py_results} DESTINATION lib/cast)
