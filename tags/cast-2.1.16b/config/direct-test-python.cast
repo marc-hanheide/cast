@@ -1,5 +1,0 @@
-HOST localhost 
-
-COMPONENT PYTHON implements.server cast.SimpleServer
-COMPONENT PYTHON aggregate.server cast.SimpleAggregateServer
-COMPONENT PYTHON word.client cast.WordServerClient
