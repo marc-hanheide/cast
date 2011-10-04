@@ -1,4 +1,0 @@
-SUBARCHITECTURE audience.subarch 
-CPP WM SubarchitectureWorkingMemory  --log --debug
-CPP TM AlwaysPositiveTaskManager #--log --debug
-JAVA MG audience.member comedyarch.AudienceMember --reaction "YAY!" --log --debug

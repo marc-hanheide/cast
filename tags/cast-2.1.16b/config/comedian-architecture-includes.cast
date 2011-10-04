@@ -1,6 +1,0 @@
-HOST localhost
-
-INCLUDE stage.cast
-INCLUDE audience.cast
-INCLUDE director.cast
-
