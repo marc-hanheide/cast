@@ -1,5 +1,0 @@
-SUBARCHITECTURE test localhost
-JAVA WM cast.architecture.SubarchitectureWorkingMemory
-JAVA TM cast.architecture.AlwaysPositiveTaskManager 
-JAVA MG writer cast.tests.DirectAccessWriter
-JAVA MG reader cast.tests.DirectAccessReader
